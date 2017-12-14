@@ -170,7 +170,7 @@ resistant against quantum computer attack.
 1.2.  Proposed Extension
 
 .fi
-This document describes a method to extend IKEv2, whilst maintaining
+This document describes a method to extend IKEv2, while maintaining
 backwards compatibility, to exchange a shared secret such that it is
 not vulnerable to quantum computer attacks.  The idea is to negotiate the use of one or more post quantum algorithm to exchange data, in addition to the
 existing DH or ECDH key exchange data.  We believe that the feature
@@ -194,14 +194,14 @@ phase, i.e. IKE_SA_INIT.  Almost all of the known post quantum
 algorithms to date have key exchange data size that is larger than 
 1K octets.  When transmitted alongside other payloads, the total
 payload size could easily exceed the network maximum transmission
-unit (MTU) size of 1500 octets, and hence this may lead to IP
+unit (MTU) size, which is often 1500 octets, and hence this may lead to IP
 level fragmentation.  While IKEv2 has a mechanism to handle
 fragmentation [RFC7383], it is applicable to messages exchanged
 after IKE_SA_INIT.  Of course, fragmentation will not be an issue
 if messages are sent over TCP [RFC8229]; however, we believe 
 that a UDP-based solution will also be required.  This document
 describes a simple mechanism to fragment IKE_SA_INIT messages,
-which also allows exchanges for payload larger than 65,535 octets.
+which also allows exchanges for payloads larger than 65,535 octets.
 
 Note that the readers should consider the approach in this document
 as to provide a long term solution in upgrading IKEv2 protocol to
@@ -256,7 +256,7 @@ The design of the proposed quantum-safe IKEv2 is driven by the following criteri
 
 .in 10
 .ti 6
-1)  Need for quantum-safe cryptography in IPSec. Quantum computers
+1)  Need for quantum-safe cryptography in IPsec. Quantum computers
 might become feasible in the next 5-10 years.  If current Internet
 communications are monitored and recorded today (D), the
 communications could be decrypted as soon as a quantum-computer is
@@ -316,8 +316,7 @@ quantum-safe exchange, and thus, the computed key, will be based on
 algorithms that both client and server wish to support.
 
 .ti 6
-9) Fragmentation support. Some quantum-safe algorithms could be relatively bulky and they might require fragmentation. Thus, a design goal is the adaptation and adoption of an existing fragmentation method or the design of a new one that allows for the fragmentation of the key shares.
-
+9)  Fragmentation support. Some quantum-safe algorithms could be relatively bulky and they might require fragmentation. Thus, a design goal is the adaptation and adoption of an existing fragmentation method or the design of a new one that allows for the fragmentation of the key shares.
 
 .ti 6
 10) Backwards compatibility and interoperability.  This is a
@@ -341,6 +340,7 @@ safe IKEv2 design can be FIPS compliant.
 2.1. Overall design
 
 .fi
+.in 3
 The proposed hybrid quantum-safe IKEv2 protocol extends RFC7296 [RFC7296] by duplicating 
 the initial exchange in [RFC7296]. The first round is then used for backwards compatibility,
 and if the responder supports this document, to negotiate the algorithms in the hybrid group.
@@ -398,7 +398,7 @@ vendor specific group identifier 0x9000 in SAi1 (see Section 2.4 for more detail
 In order to negotiate the quantum-safe algorithms included in the hybrid group, the initiator sends its policy
 for negotiation in KEi (see Section 2.5 for more details).
 If the initiator includes quantum-safe algorithms whose key shares require fragmentation, the initiator must include
-flag 0x9001 in SAi1 stating that it supports fragmentation (See Sections 2.4 and 2.6 for details).
+group identifier 0x9001 in SAi1 stating that it supports fragmentation (See Sections 2.4 and 2.6 for details).
 
 Upon reception of the IKE_SA_INIT request message from the initiator, the responder replies
 with IKE_SA_INIT response in which it can acknowledge the support of a hybrid group by sending
@@ -420,7 +420,7 @@ HDR, SAi1, KEi, Ni    -->
 .fi
 .in 3
 
-This means that the peer does not support KE value 0x9001 and advertises correct classic DH group to use.
+This means that the peer does not support KE value 0x9000 and advertises correct classic DH group to use.
 
 .ti 3
 2.2.2. Second protocol round
@@ -579,16 +579,13 @@ where:
            0x0002 is Lattice (RLWE, LWE, NTRU)
 .ti 6
            0x0003 is Code-based (McEliece, QC-MDPC)
-jj.ti 6           0x0004 is Isogeny-based (SIDH)
+.ti 6
+           0x0004 is Isogeny-based (SIDH)
 .ti 6
            0x0005 is symmetric (preshared key)
 .ti 6
 * N is the number of groups that make up the list
 .in 3
-
-The semantics of this proposal is that the initiator is proposing M different
-types of groups; any selection of one group from K different types will be
-acceptable.
 .ti 6 
 * DH_1, DH_2, ..., DH_N are the groups that make up the list, in order of preference.
 .ti 6 
@@ -628,11 +625,11 @@ The semantics of this proposal is that the initiator is proposing M different
 types of groups; any selection of one group from K different types will be
 acceptable.
 
-Example: suppose our policy is "we must agree on at least 2 groups from the list (P256, P384), (NewHope, Frodo), (SIDH)  (and NewHope is group 40, Frodo is group 41, SIDH is group 60)"; we have the list
+Example: suppose our policy is "we must agree on at least 2 groups from the list (P256, P384), (NewHope, Frodo), (SIDH)  (and NewHope is group 0x9100, Frodo is group 0x9101, SIDH is group 0x9201); we have the list
 .in 10
 .nf
 0002 0003 0001 0002 0019 0020 0002 0002
-0040 0041 0004 0001 0060 0000
+9100 9101 0004 0001 9201 0000
 .fi
 .in 3
 
@@ -648,11 +645,11 @@ Parsed as:
 .ti 9
 0002 0002  Second list is of type lattice, and consists of two groups
 .ti 12
-0040 0041  Group 40 (NewHope) and group 41 (Frodo)
+9100 9101  Group 9100 (NewHope) and group 9101 (Frodo)
 .ti 9
 0004 0001  Third list is of type isogeny, and consists of one group
 .ti 12
-0060       Group 60 (SIDH)
+9201       Group 9201 (SIDH)
 .ti 12
 0000       Zero-pad
 
@@ -688,6 +685,7 @@ We assume that the responder has a similar local policy governing what it is wil
 
 .in 9
 1. Set list of accepted DH groups to empty
+
 2. Set K to the maximum of (minimum number of group lists specified by the initiator, minimum number of group lists acceptable according to the responder policy)
 
 3. For every DH_Group_list in the initiator proposal
@@ -711,7 +709,8 @@ Append that to the "list of accepted DH groups"
 .ti 9
 4. If the list of accepted DH groups is at least K elements long,
 .ti 12
-accept..ti 9
+accept.
+.ti 9
 Otherwise,
 .ti 12
 fail.
@@ -725,7 +724,7 @@ fail.
 
 When the IKE message size exceeds the path MTU, the IKE messages are fragmented at the IP level.  IP fragments can be blocked or dropped by network devices such as NAT/PAT gateways, firewalls, proxies and load balancers. If IKE messages are dropped, the IKE and subsequent IPsec Security Association (SA) will fail to be established. In many instances the quantum safe key exchange data could be too large to send in a single IKE payload as the path MTU between hosts is set below the total size of the IKE payload. As this draft defines multiple key exchanges, there is a high chance that fragmentation will occur.
 
-The maximum length of an IKE payload is 65535 octets, it is anticipated that many post quantum algorithms will require a payload size that is greater than 65535 octets. To overcome this limitation we present a method to split the quantum secure payload into multiple fragments and send these fragments individually, therefore providing a method to overcome the maximum length limitation.
+The maximum length of an IKE payload is 65535 octets, it is anticipated that some post quantum algorithms will require a payload size that is greater than 65535 octets. To overcome this limitation we present a method to split the quantum secure payload into multiple fragments and send these fragments individually, therefore providing a method to overcome the maximum length limitation.
 
 .ti 3
 2.6.2. Fragmentation Proposed Solution 
